@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">别碰无障碍</string>
+    <string name="app_name">DoNotTryAccessibility</string>
     <string name="xposed_desc">Hook系统框架阻止应用读取无障碍</string>
     <string name="about_module">This module is made by YukiHookAPI. \nLearn more https://github.com/HighCapable/YuKiHookAPI</string>
     <string name="system_version">System version: %1$s</string>
@@ -29,8 +29,8 @@
     <string name="clear_filters">Clear Filters</string>
     <string name="result_count">%1$s results found</string>
     <string name="accessibility_check">Accessibility Check</string>
-    <string name="Export_config">Export Config</string>
-    <string name="Import_config">Import Config</string>
+    <string name="export_config">Export Config</string>
+    <string name="import_config">Import Config</string>
     <string name="export_success">Import successful</string>
     <string name="export_failed">Failed to export</string>
     <string name="import_success">Import successful</string>

@@ -1,7 +1,11 @@
 package io.github.nitsuya.donottryaccessibility.ui.activity
 
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import io.github.nitsuya.donottryaccessibility.R
 import io.github.nitsuya.donottryaccessibility.bean.AppFiltersBean
 import io.github.nitsuya.donottryaccessibility.bean.AppFiltersType
 import io.github.nitsuya.donottryaccessibility.bean.AppInfoBean
@@ -15,9 +19,12 @@ import io.github.nitsuya.donottryaccessibility.utils.factory.bindAdapter
 import io.github.nitsuya.donottryaccessibility.utils.factory.locale
 
 import io.github.nitsuya.donottryaccessibility.utils.factory.showDialog
+import io.github.nitsuya.donottryaccessibility.utils.factory.toast
 import io.github.nitsuya.donottryaccessibility.utils.tool.FrameworkTool
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 class AppsConfigActivity : BaseActivity<ActivityAppsConfigBinding>() {
@@ -26,8 +33,48 @@ class AppsConfigActivity : BaseActivity<ActivityAppsConfigBinding>() {
     private var notifyDataSetChanged: (() -> Unit)? = null
     private val listData = ArrayList<AppInfoBean>()
 
+    private val createFileLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
+        result.data?.data?.let { uri ->
+            val success = ConfigData.exportConfig(this, uri)
+            toast(if(success) locale.exportSuccess else locale.exportFailed)
+        }
+    }
+
+    private val openFileLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
+        result.data?.data?.let { uri ->
+            val success = ConfigData.importConfig(this, uri)
+            toast(if(success) locale.importSuccess else locale.importFailed)
+            if(success){
+                lifecycleScope.launch(Dispatchers.Main){
+                    refreshData(700)
+                }
+            }
+        }
+    }
+
     override fun onCreate() {
         binding.titleBackIcon.setOnClickListener { finish() }
+        binding.exportIcon.setOnClickListener {
+            createFileLauncher.launch(
+                Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/xml"
+                    putExtra(Intent.EXTRA_TITLE, "${locale.appName()}.xml")
+                }
+            )
+        }
+        binding.importIcon.setOnClickListener {
+            openFileLauncher.launch(
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/xml", "text/xml"))
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            )
+        }
         binding.filterIcon.setOnClickListener {
             showDialog<DiaAppsFilterBinding> {
                 title = locale.filterByCondition
@@ -54,14 +101,18 @@ class AppsConfigActivity : BaseActivity<ActivityAppsConfigBinding>() {
                 confirmButton {
                     setAppFiltersType()
                     appFilters.name = binding.appFiltersEdit.text.toString().trim()
-                    refreshData()
+                    runBlocking {
+                        refreshData()
+                    }
                 }
                 cancelButton()
                 if (appFilters.name.isNotBlank())
                     neutralButton(locale.clearFilters) {
                         setAppFiltersType()
                         appFilters.name = ""
-                        refreshData()
+                        runBlocking {
+                            refreshData()
+                        }
                     }
             }
         }
@@ -86,16 +137,23 @@ class AppsConfigActivity : BaseActivity<ActivityAppsConfigBinding>() {
                 }
             }
         }
-        refreshData()
+        runBlocking {
+            refreshData()
+        }
     }
 
     /** 刷新列表数据 */
-    private fun refreshData() {
+    private suspend fun refreshData(waitRefreshTime: Long = 0) {
         binding.listProgressView.isVisible = true
+        binding.exportIcon.isVisible = false
+        binding.importIcon.isVisible = false
         binding.filterIcon.isVisible = false
         binding.listView.isVisible = false
         binding.listNoDataView.isVisible = false
         binding.titleCountText.text = locale.loading
+        if(waitRefreshTime > 0){
+            delay(waitRefreshTime)
+        }
         FrameworkTool.fetchAppListData(context = this, appFilters) {
             lifecycleScope.launch(Dispatchers.IO){
                 val tempsData = ArrayList<AppInfoBean>()
@@ -114,6 +172,8 @@ class AppsConfigActivity : BaseActivity<ActivityAppsConfigBinding>() {
                     notifyDataSetChanged?.invoke()
                     binding.listView.post { binding.listView.setSelection(0) }
                     binding.listProgressView.isVisible = false
+                    binding.exportIcon.isVisible = true
+                    binding.importIcon.isVisible = true
                     binding.filterIcon.isVisible = true
                     binding.listView.isVisible = listData.isNotEmpty()
                     binding.listNoDataView.isVisible = listData.isEmpty()

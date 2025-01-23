@@ -5,13 +5,17 @@
 
 package io.github.nitsuya.donottryaccessibility.data
 
+import android.app.Activity
 import android.content.Context
+import android.net.Uri
 import com.highcapable.yukihookapi.hook.factory.prefs
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import com.highcapable.yukihookapi.hook.xposed.prefs.data.PrefsData
 import io.github.nitsuya.donottryaccessibility.BuildConfig
 import io.github.nitsuya.donottryaccessibility.utils.tool.FrameworkTool
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserFactory
 
 /**
  * 全局配置存储控制类
@@ -146,6 +150,88 @@ object ConfigData {
             if(!contains(element)) add(element)
             else remove(element)
         }
+        fun replaceAll(newData: HashSet<String>){
+            data.clear()
+            data.addAll(newData);
+            callRefresh()
+        }
     }
 
+
+    /**
+     * 导出配置到用户选择的URI
+     * @param context 当前Context
+     * @param uri 用户选择的保存位置URI
+     */
+    fun exportConfig(
+        context: Context,
+        uri: Uri
+    ): Boolean {
+        return try {
+            // 使用 ConfigData 来获取配置
+            val blockApps = ConfigData.blockApps.data
+            // 创建XML格式的配置内容
+            val xmlContent = StringBuilder().apply {
+                appendLine("<?xml version='1.0' encoding='utf-8' standalone='yes' ?>")
+                appendLine("<map>")
+                appendLine("    <set name=\"_block_apps\">")
+                blockApps.forEach { app ->
+                    appendLine("        <string>$app</string>")
+                }
+                appendLine("    </set>")
+                appendLine("</map>")
+            }.toString()
+            // 使用ContentResolver写入文件
+            context.contentResolver.openOutputStream(uri)?.use { output ->
+                output.write(xmlContent.toByteArray())
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
+     * 从用户选择的URI导入配置
+     * @param activity 当前Activity实例
+     * @param uri 用户选择的文件URI
+     * @return 导入是否成功
+     */
+    fun importConfig(
+        activity: Activity,
+        uri: Uri
+    ): Boolean {
+        return try {
+            // 读取XML文件
+            activity.contentResolver.openInputStream(uri)?.use { input ->
+                val parser = XmlPullParserFactory.newInstance().newPullParser().apply {
+                    setInput(input, "UTF-8")
+                }
+                var newBlockApps: HashSet<String> = hashSetOf()
+                var eventType = parser.eventType
+                // 解析XML文件
+                while (eventType != XmlPullParser.END_DOCUMENT) {
+                    when (eventType) {
+                        XmlPullParser.START_TAG -> {
+                            when (parser.name) {
+                                "string" -> {
+                                    parser.next()
+                                    if (parser.eventType == XmlPullParser.TEXT) {
+                                        newBlockApps.add(parser.text)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    eventType = parser.next()
+                }
+                blockApps.replaceAll(newBlockApps)
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
 }

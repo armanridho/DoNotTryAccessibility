@@ -30,4 +30,10 @@
     <string name="all_apps">全部应用</string>
     <string name="clear_filters">清除条件</string>
     <string name="result_count">共 %1$s 个结果</string>
+    <string name="Export_config">导出配置</string>
+    <string name="Import_config">导入配置</string>
+    <string name="export_success">导出成功</string>
+    <string name="export_failed">导出失败</string>
+    <string name="import_success">导入成功</string>
+    <string name="import_failed">导入失败</string>
 </resources>

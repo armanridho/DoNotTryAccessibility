@@ -229,6 +229,38 @@
                     android:text="@string/apps_config_tip"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/Export_configs_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="13dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="13dp"
+                    android:layout_marginBottom="5dp"
+                    android:background="@drawable/bg_button_round"
+                    android:gravity="center"
+                    android:padding="10dp"
+                    android:singleLine="true"
+                    android:text="@string/Export_config"
+                    android:textColor="@color/colorTextGray"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/Import_configs_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="13dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="13dp"
+                    android:layout_marginBottom="5dp"
+                    android:background="@drawable/bg_button_round"
+                    android:gravity="center"
+                    android:padding="10dp"
+                    android:singleLine="true"
+                    android:text="@string/Import_config"
+                    android:textColor="@color/colorTextGray"
+                    android:textSize="15sp" />
             </LinearLayout>
 <!--            &#45;&#45;-->
 

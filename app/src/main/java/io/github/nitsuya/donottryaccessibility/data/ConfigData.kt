@@ -115,7 +115,7 @@ object ConfigData {
         }
     }
 
-    data class PrefsDataSetString(private val key: String, private var data: HashSet<String> = hashSetOf()){
+    data class PrefsDataSetString(private val key: String, var data: HashSet<String> = hashSetOf()){
         init {
             refresh()
         }

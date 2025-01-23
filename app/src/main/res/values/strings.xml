@@ -29,4 +29,10 @@
     <string name="clear_filters">Clear Filters</string>
     <string name="result_count">%1$s results found</string>
     <string name="accessibility_check">Accessibility Check</string>
+    <string name="Export_config">Export Config</string>
+    <string name="Import_config">Import Config</string>
+    <string name="export_success">Import successful</string>
+    <string name="export_failed">Failed to export</string>
+    <string name="import_success">Import successful</string>
+    <string name="import_failed">Import failed</string>
 </resources>

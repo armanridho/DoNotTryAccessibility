@@ -3,9 +3,11 @@
 package io.github.nitsuya.donottryaccessibility.ui.activity
 
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.Activity
 import android.os.Build
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import com.highcapable.yukihookapi.YukiHookAPI
 import io.github.nitsuya.donottryaccessibility.BuildConfig
@@ -19,12 +21,57 @@ import io.github.nitsuya.donottryaccessibility.utils.factory.navigate
 import io.github.nitsuya.donottryaccessibility.utils.factory.openBrowser
 import io.github.nitsuya.donottryaccessibility.utils.factory.toast
 import io.github.nitsuya.donottryaccessibility.utils.tool.FrameworkTool
+import io.github.nitsuya.donottryaccessibility.data.*
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     companion object {
         private val systemVersion = "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) ${Build.DISPLAY}"
         var isModuleValid = false
+    }
+
+    private val createFileLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                val success = ExportConfig.exportConfig(this, uri)
+                runOnUiThread {
+                    if (success) {
+                        toast(getString(R.string.export_success))
+                        /**
+                         * 不清楚能不能行，主要是在某些情况下不刷新ui就再次导出会失败，不清楚是哪里卡住了
+                         * 改成使用路径选择之后解决了这个问题，但是有时候会出现几秒钟的卡顿，疑似线程刷新导致的bug
+                         */
+                        recreate()
+                    } else {
+                        toast(getString(R.string.export_failed))
+                    }
+                }
+            }
+        }
+    }
+
+    private val openFileLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                val success = ImportConfig.importConfig(this, uri)
+                runOnUiThread {
+                    if (success) {
+                        toast(getString(R.string.import_success))
+                        /**
+                         * 不清楚能不能行，主要是在某些情况下不刷新ui就再次导出会失败，不清楚是哪里卡住了
+                         * 改成使用文件选择之后解决了这个问题，但是有时候会出现几秒钟的卡顿，疑似线程刷新导致的bug
+                         */
+                        recreate()
+                    } else {
+                        toast(getString(R.string.import_failed))
+                    }
+                }
+            }
+        }
     }
 
     override fun onCreate() {
@@ -35,6 +82,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 navigate<AppsConfigActivity>()
             }
         }
+        binding.ExportConfigsButton.setOnClickListener {
+            ExportConfig.createFile(createFileLauncher = createFileLauncher)
+        }
+        binding.ImportConfigsButton.setOnClickListener {
+            ImportConfig.openFile(openFileLauncher)
+        }
+
 
         binding.hideIconInLauncherSwitch.isChecked = isLauncherIconShowing.not()
         binding.hideIconInLauncherSwitch.setOnCheckedChangeListener { button, isChecked ->
@@ -94,18 +148,4 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         ).joinToString("\r\n")
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

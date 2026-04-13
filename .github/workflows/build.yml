@@ -1,4 +1,4 @@
-name: Android Build & Compile
+name: Android CI - Build & Test
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup JDK 17
@@ -24,26 +24,20 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: false
 
-      - name: Grant execute permission for gradlew
+      - name: Make gradlew executable
         run: chmod +x gradlew
 
+      # === FIX UTAMA: Inject debug signing password untuk bypass universal signing error ===
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        env:
+          ORG_GRADLE_PROJECT_android_injected_signing_store_password: android
+          ORG_GRADLE_PROJECT_android_injected_signing_key_password: android
 
-      - name: Upload Debug APK
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
+          name: DoNotTryAccessibility-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
-
-      # Optional for release 
-      # - name: Build Release APK
-      #   run: ./gradlew assembleRelease
-      #   env:
-      #     SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      #     SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      #     SIGNING_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          retention-days: 14
